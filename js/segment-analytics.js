@@ -6,7 +6,7 @@
    start flowing into Segment automatically.
    ========================================================================== */
 
-const SEGMENT_WRITE_KEY = "PASTE_HERE"; // <-- put your Segment web source write key here
+const SEGMENT_WRITE_KEY = "gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI"; // <-- put your Segment web source write key here
 
 /* --------------------------------------------------------------------------
    1. Standard Segment analytics.js 2.0 loader snippet (unmodified pattern).
@@ -51,7 +51,7 @@ const SEGMENT_WRITE_KEY = "PASTE_HERE"; // <-- put your Segment web source write
       };
       analytics._writeKey = SEGMENT_WRITE_KEY;
       analytics.SNIPPET_VERSION = "4.16.1";
-      if (SEGMENT_WRITE_KEY && SEGMENT_WRITE_KEY !== "PASTE_HERE") {
+      if (SEGMENT_WRITE_KEY && SEGMENT_WRITE_KEY !== "gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI") {
         analytics.load(SEGMENT_WRITE_KEY);
       }
     }
