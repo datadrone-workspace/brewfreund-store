@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title id="page-title">Coffee — Brewfreund</title>
+<meta name="description" content="Specialty coffee, roasted fresh in Freiburg, Germany.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <section class="block-tight" style="padding-bottom:0;">
+    <div class="container" id="pdp-container"></div>
+  </section>
+
+  <section class="block bg-paper" id="related-section">
+    <div class="container">
+      <h2>You might also like</h2>
+      <div class="product-grid" id="related-grid"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "shop" });
+
+  var productId = bfParam("id");
+  var product = bfGetProduct(productId) || PRODUCTS[0];
+  document.title = product.name + " — Brewfreund";
+
+  var variant = bfGetVariant();
+
+  var container = document.getElementById("pdp-container");
+  container.innerHTML =
+    '<div class="pdp">' +
+      '<div class="pdp-gallery" style="' + bfThumbStyle(product.image) + '"></div>' +
+      '<div class="pdp-info">' +
+        '<h1>' + product.name + '</h1>' +
+        '<div class="origin-line">' + product.origin + ' · ' + product.roast + ' roast</div>' +
+        '<div class="rating">★ ' + product.rating.toFixed(1) + ' <span class="count">(' + product.ratingCount + ' reviews)</span></div>' +
+        '<div class="price">' + bfPrice(product.price) + '</div>' +
+        '<p>' + product.description + '</p>' +
+        '<div class="tasting-notes">' +
+          product.notes.map(function (n) { return '<span class="note-tag">' + n + '</span>'; }).join("") +
+        '</div>' +
+        '<table class="spec-table">' +
+          '<tr><td>Format</td><td>' + product.format + '</td></tr>' +
+          '<tr><td>Growing altitude</td><td>' + product.altitude + '</td></tr>' +
+          '<tr><td>Process</td><td>' + product.process + '</td></tr>' +
+        '</table>' +
+        '<div class="pdp-actions">' +
+          '<div class="qty-stepper">' +
+            '<button type="button" id="qty-minus" aria-label="Decrease quantity">−</button>' +
+            '<input type="text" id="qty-input" value="1" inputmode="numeric" aria-label="Quantity">' +
+            '<button type="button" id="qty-plus" aria-label="Increase quantity">+</button>' +
+          '</div>' +
+          '<button type="button" class="btn btn-primary" id="primary-cta"></button>' +
+        '</div>' +
+        '<div class="pdp-subtext" id="secondary-cta"></div>' +
+      '</div>' +
+    '</div>';
+
+  var qtyInput = document.getElementById("qty-input");
+  document.getElementById("qty-minus").addEventListener("click", function () {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value || "1", 10) - 1);
+  });
+  document.getElementById("qty-plus").addEventListener("click", function () {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value || "1", 10) + 1);
+  });
+
+  var primaryBtn = document.getElementById("primary-cta");
+  var secondary = document.getElementById("secondary-cta");
+
+  function addCurrentToCart() {
+    var qty = Math.max(1, parseInt(qtyInput.value || "1", 10));
+    bfAddToCart(product.id, qty);
+    bfUpdateCartBadge();
+    bfToast(product.name + " added to your cart");
+  }
+
+  if (variant === "A") {
+    primaryBtn.textContent = "Subscribe and Save 15%";
+    primaryBtn.addEventListener("click", function () {
+      window.location.href = "subscription.html?product=" + product.id;
+    });
+    secondary.innerHTML = 'Prefer a one-time bag? <a href="#" id="secondary-link">Add to cart instead</a>.';
+  } else {
+    primaryBtn.textContent = "Add to Cart";
+    primaryBtn.addEventListener("click", addCurrentToCart);
+    secondary.innerHTML = 'Drink this often? <a href="subscription.html?product=' + product.id + '" id="secondary-link">Subscribe and save 15%</a>.';
+  }
+
+  if (variant === "A") {
+    document.getElementById("secondary-link").addEventListener("click", function (e) {
+      e.preventDefault();
+      addCurrentToCart();
+    });
+  }
+
+  // Related products
+  var related = PRODUCTS.filter(function (p) { return p.id !== product.id; }).slice(0, 3);
+  document.getElementById("related-grid").innerHTML = related.map(function (p) {
+    return (
+      '<a class="product-card" href="product.html?id=' + p.id + '">' +
+        '<div class="thumb" style="' + bfThumbStyle(p.image) + '">' +
+          '<span class="roast-tag">' + p.roast + ' roast</span>' +
+        '</div>' +
+        '<div class="info">' +
+          '<h3>' + p.name + '</h3>' +
+          '<div class="origin">' + p.origin + '</div>' +
+          '<div class="meta-row">' +
+            '<span class="price">' + bfPrice(p.price) + '</span>' +
+            '<span class="rating">★ ' + p.rating.toFixed(1) + ' <span class="count">(' + p.ratingCount + ')</span></span>' +
+          '</div>' +
+        '</div>' +
+      '</a>'
+    );
+  }).join("");
+
+  // Segment: fire Product Viewed then Experiment Viewed
+  bfTrack("Product Viewed", bfWithContext({
+    product_id: product.id,
+    sku: product.sku,
+    name: product.name,
+    category: product.category,
+    price: product.price,
+    currency: "EUR",
+    brand: "Brewfreund",
+    experiment_variant: variant
+  }));
+
+  bfTrack("Experiment Viewed", {
+    experiment_id: BF_EXPERIMENT_ID,
+    experiment_name: BF_EXPERIMENT_NAME,
+    variant: variant
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Account — Brewfreund</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <div id="account-container"></div>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "" });
+
+  var user = bfGetUser();
+  var container = document.getElementById("account-container");
+
+  if (!user) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<h2>Log in to see your account</h2>' +
+        '<p class="lede" style="margin:0 auto 24px;">Your orders and details live here once you\'re signed in.</p>' +
+        '<a href="login.html" class="btn btn-primary">Log in</a>' +
+      '</div>';
+  } else {
+    var orders = bfOrdersForCurrentUser();
+    var initial = (user.name || user.email).trim().charAt(0).toUpperCase();
+
+    container.innerHTML =
+      '<section class="block-tight"><div class="container">' +
+        '<h1 style="font-size:clamp(2rem,3.4vw,2.6rem);">My account</h1>' +
+      '</div></section>' +
+      '<section class="block" style="padding-top:0;"><div class="container">' +
+        '<div class="account-grid">' +
+          '<div class="account-side">' +
+            '<div class="avatar">' + initial + '</div>' +
+            '<h3 style="margin-bottom:2px;">' + (user.name || "Brewfreund member") + '</h3>' +
+            '<p style="color:var(--espresso-40);font-size:0.9rem;margin-bottom:20px;">' + user.email + '</p>' +
+            '<button type="button" class="btn btn-outline btn-block" id="logout-btn">Log out</button>' +
+          '</div>' +
+          '<div>' +
+            '<h2 style="font-size:1.4rem;margin-bottom:18px;">Order history</h2>' +
+            '<div id="orders-list"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></section>';
+
+    var ordersList = document.getElementById("orders-list");
+    if (orders.length === 0) {
+      ordersList.innerHTML = '<p class="lede">No orders yet — once you check out, they\'ll show up here.</p>';
+    } else {
+      ordersList.innerHTML = orders.map(function (o) {
+        return (
+          '<div class="order-card">' +
+            '<div class="order-head"><span>' + o.orderId + '</span><span>' + bfDate(o.date) + '</span></div>' +
+            o.items.map(function (i) {
+              return '<div class="order-item-row"><span>' + i.qty + '× ' + i.name + '</span><span>' + bfPrice(i.price * i.qty) + '</span></div>';
+            }).join("") +
+            '<div class="summary-row total" style="margin-top:10px;"><span>Total</span><span>' + bfPrice(o.total) + '</span></div>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      bfLogout();
+      window.location.href = "index.html";
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop Coffee — Brewfreund</title>
+<meta name="description" content="Browse Brewfreund's espresso, filter and decaf coffees. Roasted fresh in Freiburg, Germany.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <section class="block-tight">
+    <div class="container">
+      <h1 style="font-size:clamp(2rem,3.4vw,2.8rem);">Shop the roastery</h1>
+      <p class="lede">Six coffees, roasted to order. Filter by roast style or format below.</p>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0;">
+    <div class="container">
+      <div class="filter-bar" id="category-filters"></div>
+      <div class="filter-bar" id="roast-filters"></div>
+      <div class="product-grid" id="shop-grid"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "shop" });
+
+  var params = new URLSearchParams(window.location.search);
+  var state = {
+    category: params.get("category") || "all",
+    roast: params.get("roast") || "all"
+  };
+
+  var categories = [
+    { key: "all", label: "All coffee" },
+    { key: "espresso", label: "Espresso" },
+    { key: "filter", label: "Filter" },
+    { key: "decaf", label: "Decaf" }
+  ];
+  var roasts = [
+    { key: "all", label: "Any roast" },
+    { key: "light", label: "Light" },
+    { key: "medium", label: "Medium" },
+    { key: "dark", label: "Dark" }
+  ];
+
+  function renderChips(containerId, items, activeKey, onPick) {
+    var el = document.getElementById(containerId);
+    el.innerHTML = items.map(function (i) {
+      return '<button type="button" class="chip' + (i.key === activeKey ? " active" : "") + '" data-key="' + i.key + '">' + i.label + "</button>";
+    }).join("");
+    el.querySelectorAll(".chip").forEach(function (btn) {
+      btn.addEventListener("click", function () { onPick(btn.dataset.key); });
+    });
+  }
+
+  function currentProducts() {
+    return PRODUCTS.filter(function (p) {
+      var catOk = state.category === "all" || p.category === state.category;
+      var roastOk = state.roast === "all" || p.roast === state.roast;
+      return catOk && roastOk;
+    });
+  }
+
+  function renderGrid() {
+    var list = currentProducts();
+    var grid = document.getElementById("shop-grid");
+    if (list.length === 0) {
+      grid.innerHTML = '<p>No coffees match that combination right now — try a different roast or format.</p>';
+      return;
+    }
+    grid.innerHTML = list.map(function (p) {
+      return (
+        '<a class="product-card" href="product.html?id=' + p.id + '">' +
+          '<div class="thumb" style="' + bfThumbStyle(p.image) + '">' +
+            '<span class="roast-tag">' + p.roast + ' roast</span>' +
+          '</div>' +
+          '<div class="info">' +
+            '<h3>' + p.name + '</h3>' +
+            '<div class="origin">' + p.origin + '</div>' +
+            '<div class="meta-row">' +
+              '<span class="price">' + bfPrice(p.price) + '</span>' +
+              '<span class="rating">★ ' + p.rating.toFixed(1) + ' <span class="count">(' + p.ratingCount + ')</span></span>' +
+            '</div>' +
+          '</div>' +
+        '</a>'
+      );
+    }).join("");
+  }
+
+  function render() {
+    renderChips("category-filters", categories, state.category, function (key) { state.category = key; render(); });
+    renderChips("roast-filters", roasts, state.roast, function (key) { state.roast = key; render(); });
+    renderGrid();
+  }
+
+  render();
+
+  bfTrack("Product List Viewed", {
+    category: state.category,
+    products: currentProducts().map(function (p) {
+      return { product_id: p.id, sku: p.sku, name: p.name, price: p.price, category: p.category };
+    })
+  });
+</script>
+</body>
+</html>

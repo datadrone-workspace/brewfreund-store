@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee Subscription — Brewfreund</title>
+<meta name="description" content="Subscribe to Brewfreund coffee and save 15% on every order, delivered fresh on your schedule.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <section class="block-tight">
+    <div class="container" style="max-width:680px;">
+      <span class="eyebrow" style="color:var(--terracotta-dark);font-weight:700;font-size:0.85rem;">Subscribe & save</span>
+      <h1 style="font-size:clamp(2rem,3.4vw,2.8rem);">Never run out of coffee again.</h1>
+      <p class="lede">Choose how often you'd like a fresh bag, pick your coffee, and save 15% on every delivery. Pause, swap or cancel whenever you like.</p>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:10px;">
+    <div class="container">
+      <div class="plan-grid" id="plan-grid"></div>
+    </div>
+  </section>
+
+  <section class="block bg-paper">
+    <div class="container" style="max-width:560px;">
+      <h2 style="font-size:1.5rem;">Pick your coffee</h2>
+      <div class="field" style="margin-top:16px;">
+        <label for="coffee-select">Coffee</label>
+        <select id="coffee-select"></select>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="start-sub" style="margin-top:8px;">Start subscription</button>
+    </div>
+  </section>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "subscription" });
+
+  var plans = [
+    { key: "weekly", label: "Weekly", desc: "One bag, every week", full: 14.90, featured: false },
+    { key: "biweekly", label: "Every 2 weeks", desc: "Our most popular cadence", full: 14.90, featured: true },
+    { key: "monthly", label: "Monthly", desc: "One bag, once a month", full: 14.90, featured: false }
+  ];
+
+  var selectedPlan = "biweekly";
+
+  function renderPlans() {
+    document.getElementById("plan-grid").innerHTML = plans.map(function (p) {
+      var discounted = (p.full * 0.85).toFixed(2);
+      return (
+        '<div class="plan-card' + (p.featured ? " featured" : "") + '" data-key="' + p.key + '">' +
+          (p.featured ? '<span class="badge">Most popular</span>' : '') +
+          '<h3>' + p.label + '</h3>' +
+          '<p style="color:var(--espresso-40);font-size:0.9rem;">' + p.desc + '</p>' +
+          '<div class="plan-price">€' + discounted + '</div>' +
+          '<p style="color:var(--espresso-40);font-size:0.85rem;margin:0;">per bag, was €' + p.full.toFixed(2) + '</p>' +
+          '<ul>' +
+            '<li>Free shipping</li>' +
+            '<li>Skip or cancel anytime</li>' +
+            '<li>Swap coffee each cycle</li>' +
+          '</ul>' +
+          '<button type="button" class="btn ' + (selectedPlan === p.key ? "btn-dark" : "btn-outline") + ' btn-block select-plan" data-key="' + p.key + '">' +
+            (selectedPlan === p.key ? "Selected" : "Choose plan") +
+          '</button>' +
+        '</div>'
+      );
+    }).join("");
+
+    document.querySelectorAll(".select-plan").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        selectedPlan = btn.dataset.key;
+        renderPlans();
+      });
+    });
+  }
+  renderPlans();
+
+  var select = document.getElementById("coffee-select");
+  select.innerHTML = PRODUCTS.map(function (p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join("");
+  var preselect = bfParam("product");
+  if (preselect && bfGetProduct(preselect)) select.value = preselect;
+
+  document.getElementById("start-sub").addEventListener("click", function () {
+    var product = bfGetProduct(select.value);
+    bfAddToCart(product.id, 1);
+    bfUpdateCartBadge();
+    bfToast(product.name + " subscription added — 15% applied at checkout");
+    window.location.href = "cart.html";
+  });
+</script>
+</body>
+</html>

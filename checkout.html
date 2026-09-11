@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Brewfreund</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <section class="block" style="padding-bottom:0;">
+    <div class="container">
+      <h1 style="font-size:clamp(1.9rem,3vw,2.5rem);margin-bottom:30px;">Checkout</h1>
+
+      <div class="step-track">
+        <div class="step" data-step="1"><span class="num">1</span>Shipping</div>
+        <div class="step" data-step="2"><span class="num">2</span>Payment</div>
+        <div class="step" data-step="3"><span class="num">3</span>Review</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0;">
+    <div class="container">
+      <div class="checkout-layout" id="checkout-empty-check">
+
+        <div>
+          <!-- Step 1: Shipping -->
+          <div class="checkout-panel" data-panel="1">
+            <h2>Shipping address</h2>
+            <form id="shipping-form" novalidate>
+              <div class="field">
+                <label for="full-name">Full name</label>
+                <input type="text" id="full-name" required>
+                <div class="field-error">Enter your full name.</div>
+              </div>
+              <div class="field">
+                <label for="address">Street and house number</label>
+                <input type="text" id="address" required>
+                <div class="field-error">Enter your street address.</div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="city">City</label>
+                  <input type="text" id="city" required>
+                  <div class="field-error">Enter a city.</div>
+                </div>
+                <div class="field">
+                  <label for="postal">Postal code</label>
+                  <input type="text" id="postal" required>
+                  <div class="field-error">Enter a postal code.</div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="country">Country</label>
+                <select id="country">
+                  <option>Germany</option>
+                  <option>Austria</option>
+                  <option>Netherlands</option>
+                  <option>Switzerland</option>
+                  <option>France</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Continue to payment</button>
+            </form>
+          </div>
+
+          <!-- Step 2: Payment -->
+          <div class="checkout-panel" data-panel="2">
+            <h2>Payment details</h2>
+            <p class="lede" style="margin-bottom:1.4em;">This is a demo checkout — no card is charged and no payment data leaves your browser.</p>
+            <form id="payment-form" novalidate>
+              <div class="field">
+                <label for="card-name">Name on card</label>
+                <input type="text" id="card-name" required>
+                <div class="field-error">Enter the cardholder's name.</div>
+              </div>
+              <div class="field">
+                <label for="card-number">Card number</label>
+                <input type="text" id="card-number" inputmode="numeric" placeholder="4242 4242 4242 4242" required>
+                <div class="field-error">Enter a 16-digit card number.</div>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="card-expiry">Expiry</label>
+                  <input type="text" id="card-expiry" placeholder="MM/YY" required>
+                  <div class="field-error">Enter an expiry date.</div>
+                </div>
+                <div class="field">
+                  <label for="card-cvc">CVC</label>
+                  <input type="text" id="card-cvc" inputmode="numeric" placeholder="123" required>
+                  <div class="field-error">Enter the 3-digit CVC.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <button type="button" class="btn btn-outline" id="back-to-shipping">Back</button>
+                <button type="submit" class="btn btn-primary">Review order</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Step 3: Review -->
+          <div class="checkout-panel" data-panel="3">
+            <h2>Review your order</h2>
+            <div class="review-block">
+              <h4>Shipping to</h4>
+              <a href="#" class="edit-link" data-goto="1">Edit</a>
+              <div id="review-shipping"></div>
+            </div>
+            <div class="review-block">
+              <h4>Payment</h4>
+              <a href="#" class="edit-link" data-goto="2">Edit</a>
+              <div id="review-payment"></div>
+            </div>
+            <div class="review-block">
+              <h4>Items</h4>
+              <div id="review-items"></div>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="place-order" style="margin-top:10px;">Place order</button>
+          </div>
+        </div>
+
+        <div class="summary-card" id="checkout-summary"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "shop" });
+
+  var lines = bfCartLines();
+  var container = document.getElementById("checkout-empty-check");
+
+  if (lines.length === 0) {
+    container.outerHTML =
+      '<div class="empty-state">' +
+        '<h2>There\'s nothing to check out yet</h2>' +
+        '<p class="lede" style="margin:0 auto 24px;">Add a bag of coffee to your cart first.</p>' +
+        '<a href="shop.html" class="btn btn-primary">Browse the shop</a>' +
+      '</div>';
+  } else {
+    runCheckout();
+  }
+
+  function runCheckout() {
+    var subtotal = bfCartSubtotal();
+    var shippingCost = subtotal >= 30 ? 0 : 4.90;
+    var total = subtotal + shippingCost;
+
+    var draft = (function () {
+      try { return JSON.parse(localStorage.getItem(BF_KEYS.checkout)) || {}; } catch (e) { return {}; }
+    })();
+    if (!draft.checkoutId) draft.checkoutId = bfUuid();
+    if (!draft.orderId) draft.orderId = "BF-" + Date.now().toString().slice(-8);
+    saveDraft();
+
+    function saveDraft() { localStorage.setItem(BF_KEYS.checkout, JSON.stringify(draft)); }
+
+    document.getElementById("checkout-summary").innerHTML =
+      '<h3 style="margin-bottom:14px;">Order summary</h3>' +
+      lines.map(function (l) {
+        return '<div class="summary-row"><span>' + l.qty + '× ' + l.name + '</span><span>' + bfPrice(l.price * l.qty) + '</span></div>';
+      }).join("") +
+      '<div class="summary-row"><span>Subtotal</span><span>' + bfPrice(subtotal) + '</span></div>' +
+      '<div class="summary-row"><span>Shipping</span><span>' + (shippingCost === 0 ? "Free" : bfPrice(shippingCost)) + '</span></div>' +
+      '<div class="summary-row total"><span>Total</span><span>' + bfPrice(total) + '</span></div>';
+
+    var user = bfGetUser();
+    if (user) {
+      bfIdentify(user.email, { name: user.name });
+    }
+
+    bfTrack("Checkout Started", {
+      order_id: draft.orderId,
+      checkout_id: draft.checkoutId,
+      value: total,
+      currency: "EUR",
+      products: lines.map(function (l) {
+        return { product_id: l.id, sku: l.sku, name: l.name, price: l.price, quantity: l.qty };
+      })
+    });
+
+    var steps = ["1", "2", "3"];
+    function goToStep(n) {
+      steps.forEach(function (s) {
+        document.querySelector('.checkout-panel[data-panel="' + s + '"]').classList.toggle("active", s === n);
+        var stepEl = document.querySelector('.step-track .step[data-step="' + s + '"]');
+        stepEl.classList.toggle("active", s === n);
+        stepEl.classList.toggle("done", parseInt(s, 10) < parseInt(n, 10));
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (n === "1") bfTrack("Checkout Step Viewed", { checkout_id: draft.checkoutId, step: 1, step_name: "shipping" });
+      if (n === "2") bfTrack("Checkout Step Viewed", { checkout_id: draft.checkoutId, step: 2, step_name: "payment" });
+    }
+    goToStep("1");
+
+    function validate(form) {
+      var valid = true;
+      form.querySelectorAll("input[required]").forEach(function (input) {
+        var field = input.closest(".field");
+        var ok = input.value.trim().length > 0;
+        if (input.id === "card-number") ok = input.value.replace(/\s/g, "").length >= 13;
+        if (input.id === "card-cvc") ok = /^\d{3,4}$/.test(input.value.trim());
+        field.classList.toggle("invalid", !ok);
+        if (!ok) valid = false;
+      });
+      return valid;
+    }
+
+    document.getElementById("shipping-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!validate(this)) return;
+      draft.shipping = {
+        name: document.getElementById("full-name").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        city: document.getElementById("city").value.trim(),
+        postal: document.getElementById("postal").value.trim(),
+        country: document.getElementById("country").value
+      };
+      saveDraft();
+      goToStep("2");
+    });
+
+    document.getElementById("back-to-shipping").addEventListener("click", function () { goToStep("1"); });
+
+    document.getElementById("payment-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!validate(this)) return;
+      var cardNumber = document.getElementById("card-number").value.replace(/\s/g, "");
+      draft.payment = {
+        name: document.getElementById("card-name").value.trim(),
+        last4: cardNumber.slice(-4)
+      };
+      saveDraft();
+
+      bfTrack("Payment Info Entered", { checkout_id: draft.checkoutId, step: 2 });
+
+      document.getElementById("review-shipping").textContent =
+        draft.shipping.name + ", " + draft.shipping.address + ", " + draft.shipping.city + " " + draft.shipping.postal + ", " + draft.shipping.country;
+      document.getElementById("review-payment").textContent = "Card ending in " + draft.payment.last4;
+      document.getElementById("review-items").innerHTML = lines.map(function (l) {
+        return '<div class="order-item-row"><span>' + l.qty + '× ' + l.name + '</span><span>' + bfPrice(l.price * l.qty) + '</span></div>';
+      }).join("");
+
+      goToStep("3");
+    });
+
+    document.querySelectorAll(".edit-link").forEach(function (link) {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        goToStep(link.dataset.goto);
+      });
+    });
+
+    document.getElementById("place-order").addEventListener("click", function () {
+      var variant = bfGetVariant();
+      var order = {
+        orderId: draft.orderId,
+        date: new Date().toISOString(),
+        email: user ? user.email : null,
+        name: (draft.shipping && draft.shipping.name) || (user ? user.name : ""),
+        shipping: draft.shipping,
+        items: lines.map(function (l) { return { id: l.id, name: l.name, price: l.price, qty: l.qty, image: l.image }; }),
+        subtotal: subtotal,
+        shippingCost: shippingCost,
+        total: total
+      };
+      bfSaveOrder(order);
+
+      bfTrack("Order Completed", bfWithContext({
+        order_id: draft.orderId,
+        total: total,
+        revenue: total,
+        currency: "EUR",
+        products: lines.map(function (l) {
+          return { product_id: l.id, sku: l.sku, name: l.name, price: l.price, quantity: l.qty };
+        }),
+        experiment_variant: variant
+      }));
+
+      bfClearCart();
+      localStorage.removeItem(BF_KEYS.checkout);
+      window.location.href = "confirmation.html?order=" + encodeURIComponent(draft.orderId);
+    });
+  }
+</script>
+</body>
+</html>

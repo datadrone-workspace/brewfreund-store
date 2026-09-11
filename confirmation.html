@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order Confirmed — Brewfreund</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <div id="confirm-container"></div>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "shop" });
+
+  var orderId = bfParam("order");
+  var order = bfGetOrders().find(function (o) { return o.orderId === orderId; }) || bfGetOrders()[0];
+  var container = document.getElementById("confirm-container");
+
+  if (!order) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<h2>We couldn\'t find that order</h2>' +
+        '<p class="lede" style="margin:0 auto 24px;">Head back to the shop to start a new order.</p>' +
+        '<a href="shop.html" class="btn btn-primary">Browse the shop</a>' +
+      '</div>';
+  } else {
+    container.innerHTML =
+      '<div class="confirm-hero">' +
+        '<div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#FBF7EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<h1>Order confirmed</h1>' +
+        '<p class="lede" style="margin:0 auto;">Thanks' + (order.name ? ", " + order.name.split(" ")[0] : "") + ' — your coffee is being roasted for shipping.</p>' +
+      '</div>' +
+      '<div class="container">' +
+        '<div class="order-summary-card">' +
+          '<div class="summary-row"><span>Order number</span><span>' + order.orderId + '</span></div>' +
+          '<div class="summary-row"><span>Order date</span><span>' + bfDate(order.date) + '</span></div>' +
+          (order.shipping ? '<div class="summary-row"><span>Shipping to</span><span style="text-align:right;max-width:60%;">' + order.shipping.address + ', ' + order.shipping.city + '</span></div>' : '') +
+          '<div style="margin:18px 0;border-top:1px solid var(--line-soft);"></div>' +
+          order.items.map(function (i) {
+            return '<div class="order-item-row"><span>' + i.qty + '× ' + i.name + '</span><span>' + bfPrice(i.price * i.qty) + '</span></div>';
+          }).join("") +
+          '<div class="summary-row"><span>Subtotal</span><span>' + bfPrice(order.subtotal) + '</span></div>' +
+          '<div class="summary-row"><span>Shipping</span><span>' + (order.shippingCost === 0 ? "Free" : bfPrice(order.shippingCost)) + '</span></div>' +
+          '<div class="summary-row total"><span>Total</span><span>' + bfPrice(order.total) + '</span></div>' +
+          '<a href="shop.html" class="btn btn-primary btn-block" style="margin-top:22px;">Continue shopping</a>' +
+          (order.email ? '<a href="account.html" class="btn btn-ghost btn-block" style="margin-top:8px;">View order in my account</a>' : '') +
+        '</div>' +
+      '</div>';
+  }
+</script>
+</body>
+</html>

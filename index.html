@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brewfreund — Specialty Coffee Roasted in Freiburg</title>
+<meta name="description" content="Small-batch specialty coffee, roasted fresh in Freiburg, Germany. Shop espresso, filter and decaf, or subscribe and save.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Freiburg, Germany · Est. 2016</span>
+      <h1>Coffee roasted for the way mornings actually feel.</h1>
+      <p class="lede">We source green beans directly from growers we've visited ourselves, then roast in small batches out of our Black Forest roastery — usually within a week of your order shipping.</p>
+      <div class="hero-actions">
+        <a href="shop.html" class="btn btn-primary">Shop the roastery</a>
+        <a href="subscription.html" class="btn btn-outline">See subscriptions</a>
+      </div>
+    </div>
+    <div class="hero-media">
+      <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80" alt="Coffee beans being poured into a roaster" onerror="this.style.display='none'">
+    </div>
+  </section>
+
+  <section class="block" id="featured">
+    <div class="container">
+      <div class="block-head">
+        <div>
+          <h2>This week's roast picks</h2>
+          <p class="lede">Six coffees, three roast styles. Something for the espresso machine and something for the filter.</p>
+        </div>
+        <a href="shop.html" class="btn btn-ghost">View all coffee →</a>
+      </div>
+      <div class="product-grid" id="featured-grid"></div>
+    </div>
+  </section>
+
+  <section class="block bg-espresso">
+    <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;">
+      <div>
+        <h2>A fresh bag, on your schedule.</h2>
+        <p class="lede" style="color:rgba(242,233,216,0.75);">Pick your roast, pick your cadence, and we'll grind and ship it the day before it arrives. Pause or change your coffee any time.</p>
+        <a href="subscription.html" class="btn btn-primary" style="margin-top:8px;">Start a subscription</a>
+      </div>
+      <div>
+        <table class="spec-table" style="color:var(--cream);">
+          <tr><td style="color:rgba(242,233,216,0.55);">Roasted</td><td>Within 5 days of shipping</td></tr>
+          <tr><td style="color:rgba(242,233,216,0.55);">Shipping</td><td>Free across Germany, Austria & the Netherlands</td></tr>
+          <tr><td style="color:rgba(242,233,216,0.55);">Flexibility</td><td>Skip, pause or cancel anytime</td></tr>
+          <tr><td style="color:rgba(242,233,216,0.55);">Savings</td><td>15% off every subscription order</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="story">
+    <div class="container" style="max-width:720px;">
+      <h2>Roasted in the Black Forest, sourced everywhere else.</h2>
+      <p>Brewfreund started in a garage roaster in Freiburg with one goal: bring the kind of coffee we drank on origin trips back home, without the markup of a big-name café chain. Ten years on we still roast everything ourselves, in batches small enough that a roaster can taste each one before it ships.</p>
+    </div>
+  </section>
+
+  <section class="block bg-paper" id="testimonials">
+    <div class="container">
+      <h2>From people who've run out and reordered</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial">
+          <p>"The Kilimanjaro is the first light roast that's actually converted me from dark roast espresso."</p>
+          <div class="attr">Nadine K., Berlin</div>
+        </div>
+        <div class="testimonial">
+          <p>"Subscription shows up like clockwork and the bags are always dated within the week."</p>
+          <div class="attr">Tobias R., Munich</div>
+        </div>
+        <div class="testimonial">
+          <p>"Sumatra Reserve is the best oat-milk flat white base I've found outside a café."</p>
+          <div class="attr">Julia M., Vienna</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "home" });
+
+  var grid = document.getElementById("featured-grid");
+  var featured = PRODUCTS.slice(0, 3);
+  grid.innerHTML = featured.map(function (p) {
+    return (
+      '<a class="product-card" href="product.html?id=' + p.id + '">' +
+        '<div class="thumb" style="' + bfThumbStyle(p.image) + '">' +
+          '<span class="roast-tag">' + p.roast + ' roast</span>' +
+        '</div>' +
+        '<div class="info">' +
+          '<h3>' + p.name + '</h3>' +
+          '<div class="origin">' + p.origin + '</div>' +
+          '<div class="meta-row">' +
+            '<span class="price">' + bfPrice(p.price) + '</span>' +
+            '<span class="rating">★ ' + p.rating.toFixed(1) + ' <span class="count">(' + p.ratingCount + ')</span></span>' +
+          '</div>' +
+        '</div>' +
+      '</a>'
+    );
+  }).join("");
+</script>
+</body>
+</html>

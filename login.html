@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log In — Brewfreund</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<main id="main">
+  <div class="auth-shell">
+    <div class="card">
+      <h1 style="font-size:1.8rem;">Log in</h1>
+      <p class="lede" style="margin-bottom:1.6em;">Welcome back to Brewfreund.</p>
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+          <div class="field-error">Enter a valid email address.</div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" required>
+          <div class="field-error">Enter your password.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      </form>
+      <div class="auth-switch">New to Brewfreund? <a href="signup.html">Create an account</a></div>
+    </div>
+  </div>
+</main>
+
+<script src="js/products.js"></script>
+<script src="js/segment-analytics.js"></script>
+<script src="js/app.js"></script>
+<script>
+  bfInitPage({ active: "" });
+
+  document.getElementById("login-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = document.getElementById("email").value.trim().toLowerCase();
+    var password = document.getElementById("password").value;
+
+    var emailField = document.getElementById("email").closest(".field");
+    var passField = document.getElementById("password").closest(".field");
+    emailField.classList.toggle("invalid", !email.includes("@") || !email.includes("."));
+    passField.classList.toggle("invalid", password.length === 0);
+    if (!email.includes("@") || password.length === 0) return;
+
+    var account = bfFindAccount(email);
+    var name = "";
+    if (account) {
+      name = account.name;
+    } else {
+      // No local record yet for this email — provision one so the demo flow
+      // always completes; a returning email still resolves to one identity.
+      name = "";
+      bfSaveAccount(email, { name: "", password: password });
+    }
+
+    bfSetUser({ email: email, name: name });
+    bfIdentify(email, { email: email, name: name || undefined });
+    bfTrack("Signed In", { email: email });
+
+    window.location.href = "account.html";
+  });
+</script>
+</body>
+</html>
