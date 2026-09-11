@@ -5,98 +5,83 @@ analytics count one shopper (Lena) as three people, so its A/B test crowns the
 wrong winner. Once identities are stitched, the verdict flips and the real
 checkout leak (the payment step) shows up.
 
+**This is a plain HTML/CSS/JS site — nothing to install and nothing to run on a
+server.** Host it on GitHub Pages and everything happens in the browser.
+
 Everything here is fake demo data. Nothing is named after the prospect.
 
 ---
 
-## What's in here
+## The three pages
 
-| File | What it is |
-|------|-----------|
-| `index.html` | The **coffee storefront** (what the audience sees). Has the product page, the chat widget, and the two recovery messages. |
-| `dashboard.html` | The **analytics dashboard** with the **lie / truth toggle** — the screen you perform the demo on. |
-| `dataset.js` | The 18 shoppers and their journeys. The single source of truth. |
-| `stats.js` | Works out the lie and the truth numbers from that data. |
-| `scripts/seed.js` | Loads all the shoppers into Segment. |
-| `scripts/merge-lena.js` | The **live moment** — merges Lena's 3 identities into 1. Run this on camera. |
-| `scripts/merge-cast.js` | Optional — stitches the rest of the store after Lena. |
+| Page | What it's for |
+|------|---------------|
+| `index.html` | The **coffee storefront** the audience sees. Product page, chat widget, recovery messages. |
+| `dashboard.html` | The **analytics dashboard** with the **lie / truth toggle** — the screen you perform on. Works on its own, no key needed. |
+| `seed.html` | The **operator console** — paste your Write Key and click buttons to load the data and do the live merge. Use it on your own machine, not the demo screen. |
+
+`dataset.js` and `stats.js` are the shared data and the maths behind them.
 
 ---
 
-## Step 1 — add your Write Key (the only thing you need to paste)
-
-1. In Segment, open the **Brewfreund Store** source and copy its **Write Key**.
-2. Open `index.html`, find this line near the bottom, and paste it in:
-
-   ```js
-   var SEGMENT_WRITE_KEY = "PASTE_YOUR_WRITE_KEY_HERE";
-   ```
-
-That's the only edit. The scripts take the key from the command line instead
-(next section), so you don't paste it anywhere else.
-
----
-
-## Step 2 — put the two pages online (GitHub Pages)
+## Step 1 — turn the site on (GitHub Pages)
 
 1. In this repo: **Settings → Pages**.
-2. Under *Build and deployment*, set **Source: Deploy from a branch**,
-   **Branch: `main`**, folder **`/ (root)`**, and Save.
-3. Wait ~1 minute. Your two links will be:
+2. Set **Source: Deploy from a branch**, **Branch: `main`**, folder **`/ (root)`**, Save.
+3. Wait ~1 minute. Your links:
    - Storefront: `https://datadrone-workspace.github.io/brewfreund-store/`
    - Dashboard: `https://datadrone-workspace.github.io/brewfreund-store/dashboard.html`
+   - Seeder: `https://datadrone-workspace.github.io/brewfreund-store/seed.html`
 
-The dashboard works on its own — it doesn't need the Write Key.
+---
+
+## Step 2 — add your Write Key to the storefront
+
+So the storefront can fire live events, open `index.html`, find this line near
+the bottom, and paste your key in:
+
+```js
+var SEGMENT_WRITE_KEY = "PASTE_YOUR_WRITE_KEY_HERE";
+```
+
+(The seeder page asks for the key in its own box — you don't edit any file for that.)
 
 ---
 
 ## Step 3 — fire the test events (proves the source works)
 
-Just open the storefront link in a browser:
+Open the storefront link:
 - It fires a **Product Viewed** the moment the page loads.
-- Click **Add to cart** and it fires a **Cart Added**.
+- Click **Add to cart** → fires a **Cart Added**.
 
-Now open Segment → **Debugger** and you should see both events arrive. That's
-the Step 1 evidence done.
-
----
-
-## Step 4 — load the store (run once, before the demo)
-
-You need Node 18+ installed. Then, from this folder:
-
-```bash
-WRITE_KEY=your_write_key node scripts/seed.js
-```
-
-- Want to see the numbers first without sending anything?
-  `node scripts/seed.js --dry`
-
-After it runs, open **Unify** in Segment: ~25 profiles, with **Lena as 3** of them.
+Open Segment → **Debugger** and you'll see both arrive. Step 1 evidence done.
 
 ---
 
-## Step 5 — the live merge (do this on the call)
+## Step 4 — load the store (before the demo)
 
-When you're ready for the reveal:
+1. Open the **seeder** link (`seed.html`).
+2. Paste your **Write Key** in the box.
+3. Click **Load the store**. It sends ~18 shoppers' events, with Lena as 3 identities.
+4. Open **Unify** in Segment: ~25 profiles, with **Lena as 3** of them.
 
-```bash
-WRITE_KEY=your_write_key node scripts/merge-lena.js
-```
+The seeder also shows the exact numbers to expect, so you can sanity-check them.
 
-Watch Unify collapse Lena's **3 profiles into 1**. If you also want the whole
-store to show the stitched headcount afterwards:
+---
 
-```bash
-WRITE_KEY=your_write_key node scripts/merge-cast.js
-```
+## Step 5 — the live merge (on the call)
+
+On the seeder page, when you're ready for the reveal, click
+**▶ Merge Lena — 3 → 1**. Watch Unify collapse her three profiles into one.
+
+Want the whole store stitched afterwards? Click **Merge the rest of the store**
+(optional — leave Lena's moment to stand on its own first).
 
 ---
 
 ## The numbers to expect
 
-These are computed from the data, so the dashboard always matches them. Read
-the live figures off Segment on the call — they should line up.
+Computed from the data, so the dashboard and seeder always match.
 
 - **25 profiles → 18 real people** (about **28%** were duplicates)
 - **~27%** of revenue was credited to the wrong touchpoint
@@ -107,8 +92,8 @@ the live figures off Segment on the call — they should line up.
 
 ## How the demo flows
 
-1. Show the **dashboard** (lie state): 3 Lenas, desktop drives revenue, Variant B winning.
-2. Run **merge-lena.js** live: 3 → 1, shame stats appear.
+1. Show the **dashboard** (lie): 3 Lenas, desktop drives revenue, Variant B winning.
+2. On the **seeder**, click **Merge Lena** live: 3 → 1, shame stats appear.
 3. Flip the dashboard to **truth**: Variant A was the real winner.
 4. Show the **funnel**: the leak is the payment step, across phone + laptop.
 5. Show the **recovery** on the storefront (`?recovery=voucher` for Lena,
