@@ -51,7 +51,7 @@ const SEGMENT_WRITE_KEY = "gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI"; // <-- put your Se
       };
       analytics._writeKey = SEGMENT_WRITE_KEY;
       analytics.SNIPPET_VERSION = "4.16.1";
-      if (SEGMENT_WRITE_KEY && SEGMENT_WRITE_KEY !== "gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI") {
+      if (SEGMENT_WRITE_KEY && SEGMENT_WRITE_KEY !== "PASTE_HERE") {
         analytics.load(SEGMENT_WRITE_KEY);
       }
     }
