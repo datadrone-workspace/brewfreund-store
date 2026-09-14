@@ -1,7 +1,5 @@
 /* ==========================================================================
    Brewfreund — shared app logic
-   Cart, identity, experiment assignment, and page chrome all live here.
-   Persistence is localStorage only — this is a static, backend-free site.
    ========================================================================== */
 
 const BF_KEYS = {
@@ -13,27 +11,26 @@ const BF_KEYS = {
   accounts: "bf_accounts"
 };
 
-/* --------------------------------------------------------------------------
-   Accounts (local-only, for the sign up / log in flow)
-   -------------------------------------------------------------------------- */
-
 function bfGetAccounts() {
   try { return JSON.parse(localStorage.getItem(BF_KEYS.accounts)) || {}; } catch (e) { return {}; }
 }
-
 function bfSaveAccount(email, record) {
   var accounts = bfGetAccounts();
   accounts[email] = record;
   localStorage.setItem(BF_KEYS.accounts, JSON.stringify(accounts));
 }
-
 function bfFindAccount(email) {
   return bfGetAccounts()[email.trim().toLowerCase()];
 }
 
-/* --------------------------------------------------------------------------
-   Hidden operator controls (URL only — never rendered in the UI)
-   -------------------------------------------------------------------------- */
+/** Derives a clean display name from an email local part, e.g. john.doe23@x.com -> "John Doe". */
+function bfNameFromEmail(email) {
+  var local = String(email || "").split("@")[0];
+  var words = local.replace(/[._+\-]+/g, " ").replace(/[0-9]+/g, " ").replace(/\s+/g, " ").trim().split(" ");
+  return words.filter(Boolean).map(function (w) {
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(" ");
+}
 
 (function handleOperatorControls() {
   if (bfParam("reset") === "1") {
@@ -44,45 +41,34 @@ function bfFindAccount(email) {
   }
 })();
 
-/* --------------------------------------------------------------------------
-   Identity
-   -------------------------------------------------------------------------- */
-
 function bfGetUser() {
   try { return JSON.parse(localStorage.getItem(BF_KEYS.user)); } catch (e) { return null; }
 }
-
 function bfSetUser(user) {
   localStorage.setItem(BF_KEYS.user, JSON.stringify(user));
 }
-
 function bfLogout() {
   localStorage.removeItem(BF_KEYS.user);
 }
 
-/** Email-link landing: ?u=<email> identifies the visitor immediately on load. */
 (function handleEmailLinkLanding() {
   var linked = bfParam("u");
   if (!linked) return;
   var email;
   try {
     email = decodeURIComponent(linked);
-    if (!email.includes("@")) email = atob(linked); // tolerate base64-encoded email
+    if (!email.includes("@")) email = atob(linked);
   } catch (e) {
     email = linked;
   }
   email = email.trim().toLowerCase();
   var existing = bfGetUser();
-  var name = existing && existing.email === email ? existing.name : (existing ? existing.name : "");
-  bfSetUser({ email: email, name: name || "" });
+  var name = (existing && existing.name) ? existing.name : bfNameFromEmail(email);
+  bfSetUser({ email: email, name: name });
   bfIdentify(email, { email: email, name: name || undefined });
 })();
 
-/* --------------------------------------------------------------------------
-   A/B experiment: PDP primary CTA
-   -------------------------------------------------------------------------- */
-
-const BF_EXPERIMENT_ID = "pdp_cta_test";
+const BF_EXPERIMENT_ID = "pdp_cta_ab";
 const BF_EXPERIMENT_NAME = "PDP CTA Subscription vs Cart";
 
 function bfGetVariant() {
@@ -98,17 +84,12 @@ function bfGetVariant() {
   return assigned;
 }
 
-/* --------------------------------------------------------------------------
-   Cart
-   -------------------------------------------------------------------------- */
-
 function bfUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
     var r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }
-
 function bfGetCart() {
   try {
     var cart = JSON.parse(localStorage.getItem(BF_KEYS.cart));
@@ -118,35 +99,25 @@ function bfGetCart() {
   localStorage.setItem(BF_KEYS.cart, JSON.stringify(fresh));
   return fresh;
 }
-
 function bfSaveCart(cart) {
   localStorage.setItem(BF_KEYS.cart, JSON.stringify(cart));
 }
-
 function bfCartCount() {
   return bfGetCart().items.reduce(function (sum, i) { return sum + i.qty; }, 0);
 }
-
 function bfAddToCart(productId, qty) {
   var cart = bfGetCart();
   var existing = cart.items.find(function (i) { return i.productId === productId; });
   if (existing) existing.qty += qty;
   else cart.items.push({ productId: productId, qty: qty });
   bfSaveCart(cart);
-
   var product = bfGetProduct(productId);
   bfTrack("Product Added", {
-    product_id: product.id,
-    sku: product.sku,
-    name: product.name,
-    price: product.price,
-    quantity: qty,
-    cart_id: cart.cartId,
-    currency: "EUR"
+    product_id: product.id, sku: product.sku, name: product.name,
+    price: product.price, quantity: qty, cart_id: cart.cartId, currency: "EUR"
   });
   return cart;
 }
-
 function bfUpdateQty(productId, qty) {
   var cart = bfGetCart();
   var item = cart.items.find(function (i) { return i.productId === productId; });
@@ -159,11 +130,7 @@ function bfUpdateQty(productId, qty) {
   bfSaveCart(cart);
   return cart;
 }
-
-function bfRemoveFromCart(productId) {
-  return bfUpdateQty(productId, 0);
-}
-
+function bfRemoveFromCart(productId) { return bfUpdateQty(productId, 0); }
 function bfCartLines() {
   var cart = bfGetCart();
   return cart.items.map(function (i) {
@@ -171,18 +138,12 @@ function bfCartLines() {
     return Object.assign({ qty: i.qty }, p);
   }).filter(function (l) { return l.id; });
 }
-
 function bfCartSubtotal() {
   return bfCartLines().reduce(function (sum, l) { return sum + l.price * l.qty; }, 0);
 }
-
 function bfClearCart() {
   localStorage.setItem(BF_KEYS.cart, JSON.stringify({ cartId: bfUuid(), items: [] }));
 }
-
-/* --------------------------------------------------------------------------
-   Orders
-   -------------------------------------------------------------------------- */
 
 function bfGetOrders() {
   try {
@@ -190,42 +151,29 @@ function bfGetOrders() {
     return Array.isArray(orders) ? orders : [];
   } catch (e) { return []; }
 }
-
 function bfSaveOrder(order) {
   var orders = bfGetOrders();
   orders.unshift(order);
   localStorage.setItem(BF_KEYS.orders, JSON.stringify(orders));
 }
-
 function bfOrdersForCurrentUser() {
   var user = bfGetUser();
   if (!user) return [];
   return bfGetOrders().filter(function (o) { return o.email === user.email; });
 }
 
-/* --------------------------------------------------------------------------
-   Formatting
-   -------------------------------------------------------------------------- */
-
-/** Combines a photo URL with a warm gradient so a failed image load never looks broken. */
 function bfThumbStyle(imageUrl) {
   return "background-image:url(" + imageUrl + "), linear-gradient(155deg, #7A5638, #2A1912);";
 }
-
-function bfPrice(amount) {
-  return "€" + amount.toFixed(2);
-}
-
+function bfPrice(amount) { return "€" + amount.toFixed(2); }
 function bfDate(iso) {
   var d = new Date(iso);
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
-
 function bfUpdateCartBadge() {
   var badge = document.querySelector(".cart-count");
   if (badge) badge.textContent = bfCartCount();
 }
-
 function bfToast(message) {
   var el = document.querySelector(".toast");
   if (!el) {
@@ -238,10 +186,6 @@ function bfToast(message) {
   clearTimeout(window.__bfToastTimer);
   window.__bfToastTimer = setTimeout(function () { el.classList.remove("show"); }, 2600);
 }
-
-/* --------------------------------------------------------------------------
-   Page chrome: header + footer, injected into every page
-   -------------------------------------------------------------------------- */
 
 const BF_MARK_SVG = '<svg class="brand-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
   '<path d="M16 3C10 3 6 8 6 14c0 7 4.5 12 10 15 5.5-3 10-8 10-15 0-6-4-11-10-11Z" fill="#A85B2A"/>' +
@@ -258,11 +202,9 @@ function bfRenderHeader(activePage) {
   var navHtml = nav.map(function (item) {
     return '<a href="' + item.href + '" class="' + (item.key === activePage ? "active" : "") + '">' + item.label + "</a>";
   }).join("");
-
   var accountHtml = user
     ? '<a class="icon-link" href="account.html">' + (user.name ? user.name.split(" ")[0] : "Account") + "</a>"
     : '<a class="icon-link" href="login.html">Log in</a>';
-
   var header = document.createElement("header");
   header.className = "site-header";
   header.innerHTML =
@@ -275,9 +217,7 @@ function bfRenderHeader(activePage) {
         '<a class="icon-link" href="cart.html">Cart<span class="cart-count">' + bfCartCount() + "</span></a>" +
       "</div>" +
     "</div>";
-
   document.body.insertBefore(header, document.body.firstChild);
-
   var toggle = header.querySelector(".nav-toggle");
   var menu = header.querySelector(".main-nav");
   toggle.addEventListener("click", function () {
@@ -322,13 +262,10 @@ function bfRenderFooter() {
   document.body.appendChild(footer);
 }
 
-/** Call once at the top of every page's inline script. */
 function bfInitPage(options) {
   options = options || {};
   bfRenderHeader(options.active);
-  document.addEventListener("DOMContentLoaded", function () {
-    // header/footer already inserted synchronously; nothing else required here
-  });
+  document.addEventListener("DOMContentLoaded", function () {});
   bfRenderFooter();
   bfPage();
 }

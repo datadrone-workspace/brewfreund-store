@@ -50,14 +50,11 @@
     if (!email.includes("@") || password.length === 0) return;
 
     var account = bfFindAccount(email);
-    var name = "";
-    if (account) {
-      name = account.name;
-    } else {
-      // No local record yet for this email — provision one so the demo flow
-      // always completes; a returning email still resolves to one identity.
-      name = "";
-      bfSaveAccount(email, { name: "", password: password });
+    // Use the saved name if there is one, otherwise derive a clean name from
+    // the email so the profile never shows a blank "User".
+    var name = (account && account.name) ? account.name : bfNameFromEmail(email);
+    if (!account) {
+      bfSaveAccount(email, { name: name, password: password });
     }
 
     bfSetUser({ email: email, name: name });
