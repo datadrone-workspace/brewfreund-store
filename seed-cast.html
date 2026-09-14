@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brewfreund — seed cast</title>
+<style>
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f6f9;color:#141a22}
+  .wrap{max-width:820px;margin:24px auto;padding:0 20px}
+  .card{background:#fff;border:1px solid #e5e9ef;border-radius:12px;padding:20px;margin-bottom:16px}
+  h1{font-size:18px;margin:0 0 4px}
+  p{color:#63707e;font-size:13px;margin:0 0 12px}
+  button{border:0;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;background:#2f6df0}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .bar{height:10px;background:#eef1f5;border-radius:6px;overflow:hidden;margin-top:12px}
+  .bar>div{height:100%;width:0;background:#1f8a5b;transition:width .2s}
+  .log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#0f1620;color:#cfe3ff;border-radius:10px;padding:12px;height:260px;overflow:auto;white-space:pre-wrap;margin-top:12px}
+  .log .ok{color:#7ee0a8}.log .err{color:#ff9a8f}.log .hi{color:#ffd479}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Brewfreund — seed the supporting cast</h1>
+    <p>Loads ~14 named shoppers into Segment so the workspace looks populated for the demo. Lena is not included; keep her for the live take. Operator page, not linked from the store.</p>
+    <button id="go">Seed the cast</button>
+    <span id="state" style="color:#63707e;font-size:13px;margin-left:10px"></span>
+    <div class="bar"><div id="pbar"></div></div>
+    <div class="log" id="log">Ready. Click "Seed the cast".</div>
+  </div>
+</div>
+<script>
+var KEY = "gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI";
+var API = "https://api.segment.io/v1";
+
+var PRODUCTS = {
+  esp:  { product_id:"schwarzwald-espresso", sku:"BF-ESP-001", name:"Schwarzwald Espresso", category:"espresso", price:14.90 },
+  alp:  { product_id:"alpengluehen-blend", sku:"BF-FIL-002", name:"Alpenglühen Blend", category:"filter", price:13.50 },
+  kil:  { product_id:"kilimanjaro-sonnenaufgang", sku:"BF-FIL-003", name:"Kilimanjaro Sonnenaufgang", category:"filter", price:16.90 },
+  sum:  { product_id:"sumatra-mandheling-reserve", sku:"BF-ESP-004", name:"Sumatra Mandheling Reserve", category:"espresso", price:17.50 },
+  dec:  { product_id:"morgenlicht-decaf", sku:"BF-DEC-005", name:"Morgenlicht Decaf", category:"decaf", price:15.90 },
+  cold: { product_id:"bergkristall-cold-brew", sku:"BF-FIL-006", name:"Bergkristall Cold Brew Blend", category:"filter", price:14.20 }
+};
+
+// name, email, source, device, variant, product, buys(bool), abandons(stage or null)
+var CAST = [
+  ["John Doe","john.doe@gmail.com","instagram","desktop","B","esp",true,null],
+  ["Jack Turner","jack.turner@gmail.com","instagram","mobile","A","alp",true,null],
+  ["Olivia Bennett","olivia.bennett@gmail.com","instagram","desktop","B","kil",true,null],
+  ["Mia Klein","mia.klein@web.de","instagram","mobile","A","sum",true,null],
+  ["Noah Fischer","noah.fischer@gmail.com","instagram","desktop","B","dec",true,null],
+  ["Sophia Rossi","sophia.rossi@gmail.com","instagram","mobile","A","cold",true,null],
+  ["Rose Miller","rose.miller@gmail.com","klaviyo","desktop","B","esp",true,null],
+  ["Liam Walsh","liam.walsh@gmail.com","klaviyo","mobile","A","alp",true,null],
+  ["Emma Stone","emma.stone@gmail.com","direct","desktop","B","kil",true,null],
+  ["Ben Carter","ben.carter@gmail.com","direct","desktop","B","sum",true,null],
+  ["Lucas Weber","lucas.weber@web.de","organic","desktop","A","dec",true,null],
+  ["Ava Romano","ava.romano@gmail.com","instagram","mobile","A","cold",false,null],
+  ["Grace Hughes","grace.hughes@gmail.com","klaviyo","mobile","A","alp",false,"payment"],
+  ["Henry Adams","henry.adams@gmail.com","direct","desktop","B","esp",false,null]
+];
+
+var logEl = document.getElementById("log");
+function log(m,c){var s=document.createElement("span");if(c)s.className=c;s.textContent=m+"\n";logEl.appendChild(s);logEl.scrollTop=logEl.scrollHeight;}
+function auth(){return "Basic "+btoa(KEY+":");}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+var DAY=24*60*60*1000;
+function ts(d,min){return new Date(Date.now()-d*DAY+min*60000).toISOString();}
+function uuid(){return "xxxxxxxxxxxx4xxxyxxx".replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==="x"?r:(r&0x3|0x8);return v.toString(16);});}
+
+async function send(kind,body){
+  var res=await fetch(API+"/"+kind,{method:"POST",headers:{"Content-Type":"application/json","Authorization":auth()},body:JSON.stringify(body)});
+  if(!res.ok){throw new Error(kind+" "+res.status+" "+await res.text());}
+}
+
+function buildCalls(){
+  var calls=[];
+  CAST.forEach(function(c,idx){
+    var name=c[0],email=c[1].toLowerCase(),source=c[2],device=c[3],variant=c[4],p=PRODUCTS[c[5]],buys=c[6],abandon=c[7];
+    var day=13-idx, min=0;
+    var base={source:source,device_type:device,experiment_variant:variant};
+    calls.push(["identify",{userId:email,traits:{email:email,name:name},timestamp:ts(day,min)}]); min+=1;
+    calls.push(["track",{userId:email,event:"Product Viewed",properties:Object.assign({product_id:p.product_id,sku:p.sku,name:p.name,category:p.category,price:p.price,currency:"EUR",brand:"Brewfreund"},base),timestamp:ts(day,min)}]); min+=2;
+    calls.push(["track",{userId:email,event:"Experiment Viewed",properties:{experiment_id:"pdp_cta_test",experiment_name:"PDP CTA Subscription vs Cart",variant:variant},timestamp:ts(day,min)}]); min+=1;
+    if(buys||abandon){
+      var cid=uuid();
+      calls.push(["track",{userId:email,event:"Product Added",properties:{product_id:p.product_id,sku:p.sku,name:p.name,price:p.price,quantity:1,cart_id:cid,currency:"EUR"},timestamp:ts(day,min)}]); min+=2;
+      calls.push(["track",{userId:email,event:"Checkout Started",properties:{order_id:cid,value:p.price,currency:"EUR"},timestamp:ts(day,min)}]); min+=1;
+      calls.push(["track",{userId:email,event:"Checkout Step Viewed",properties:{checkout_id:cid,step:1,step_name:"shipping"},timestamp:ts(day,min)}]); min+=1;
+      if(buys || abandon==="payment"){
+        calls.push(["track",{userId:email,event:"Checkout Step Viewed",properties:{checkout_id:cid,step:2,step_name:"payment"},timestamp:ts(day,min)}]); min+=1;
+      }
+      if(buys){
+        calls.push(["track",{userId:email,event:"Order Completed",properties:Object.assign({order_id:cid,total:p.price,revenue:p.price,currency:"EUR",products:[{product_id:p.product_id,sku:p.sku,name:p.name,price:p.price,quantity:1}]},base),timestamp:ts(day,min)}]);
+      }
+    }
+  });
+  return calls;
+}
+
+document.getElementById("go").addEventListener("click",async function(){
+  var btn=this;btn.disabled=true;
+  var st=document.getElementById("state");st.textContent="sending…";
+  var calls=buildCalls();
+  log("Seeding "+CAST.length+" shoppers, "+calls.length+" calls…","hi");
+  var bar=document.getElementById("pbar");
+  var lastEmail="";
+  for(var i=0;i<calls.length;i++){
+    try{ await send(calls[i][0],calls[i][1]); }
+    catch(e){ log("  ✗ "+e.message,"err"); st.textContent="failed"; btn.disabled=false; return; }
+    var em=calls[i][1].userId; if(em!==lastEmail){log("  ✓ "+em,"ok");lastEmail=em;}
+    bar.style.width=Math.round(100*(i+1)/calls.length)+"%";
+    await sleep(35);
+  }
+  st.textContent="done";
+  log("\nDone. "+CAST.length+" profiles seeded. 6 are Instagram buyers (audience will show them).","hi");
+  window.__seedDone=true;
+});
+</script>
+</body>
+</html>
