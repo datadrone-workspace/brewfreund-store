@@ -14,7 +14,7 @@
   button:disabled{opacity:.5;cursor:not-allowed}
   .bar{height:10px;background:#eef1f5;border-radius:6px;overflow:hidden;margin-top:12px}
   .bar>div{height:100%;width:0;background:#1f8a5b;transition:width .2s}
-  .log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#0f1620;color:#cfe3ff;border-radius:10px;padding:12px;height:260px;overflow:auto;white-space:pre-wrap;margin-top:12px}
+  .log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#0f1620;color:#cfe3ff;border-radius:10px;padding:12px;height:280px;overflow:auto;white-space:pre-wrap;margin-top:12px}
   .log .ok{color:#7ee0a8}.log .err{color:#ff9a8f}.log .hi{color:#ffd479}
 </style>
 </head>
@@ -22,7 +22,7 @@
 <div class="wrap">
   <div class="card">
     <h1>Brewfreund — seed the supporting cast</h1>
-    <p>Loads ~14 named shoppers into Segment so the workspace looks populated for the demo. Lena is not included; keep her for the live take. Operator page, not linked from the store.</p>
+    <p>Loads named coffee customers into Segment so the workspace looks populated. Operator page, not linked from the store.</p>
     <button id="go">Seed the cast</button>
     <span id="state" style="color:#63707e;font-size:13px;margin-left:10px"></span>
     <div class="bar"><div id="pbar"></div></div>
@@ -57,7 +57,23 @@ var CAST = [
   ["Lucas Weber","lucas.weber@web.de","organic","desktop","A","dec",true,null],
   ["Ava Romano","ava.romano@gmail.com","instagram","mobile","A","cold",false,null],
   ["Grace Hughes","grace.hughes@gmail.com","klaviyo","mobile","A","alp",false,"payment"],
-  ["Henry Adams","henry.adams@gmail.com","direct","desktop","B","esp",false,null]
+  ["Henry Adams","henry.adams@gmail.com","direct","desktop","B","esp",false,null],
+  ["Anna Richter","anna.richter@gmail.com","instagram","desktop","B","kil",true,null],
+  ["Paul Neumann","paul.neumann@web.de","organic","desktop","A","esp",true,null],
+  ["Marie Schäfer","marie.schaefer@gmx.de","klaviyo","mobile","A","alp",true,null],
+  ["Leon Wolf","leon.wolf@gmail.com","instagram","mobile","A","sum",true,null],
+  ["Hannah Koch","hannah.koch@web.de","direct","desktop","B","dec",true,null],
+  ["David Braun","david.braun@gmail.com","instagram","desktop","B","cold",true,null],
+  ["Julia Werner","julia.werner@gmx.de","organic","desktop","A","esp",true,null],
+  ["Simon Krause","simon.krause@gmail.com","klaviyo","desktop","B","kil",true,null],
+  ["Lea Zimmermann","lea.zimmermann@web.de","instagram","mobile","A","alp",false,null],
+  ["Max Hartmann","max.hartmann@gmail.com","direct","desktop","B","sum",true,null],
+  ["Charlotte Lang","charlotte.lang@gmx.de","instagram","mobile","A","dec",true,null],
+  ["Elias Schmitt","elias.schmitt@gmail.com","organic","desktop","A","cold",false,null],
+  ["Marta Ricci","marta.ricci@gmail.com","klaviyo","mobile","A","esp",true,null],
+  ["Oscar Jansen","oscar.jansen@gmail.com","direct","desktop","B","alp",true,null],
+  ["Isabel Moser","isabel.moser@web.de","instagram","desktop","B","kil",true,null],
+  ["Finn Keller","finn.keller@gmail.com","organic","mobile","A","sum",false,null]
 ];
 
 var logEl = document.getElementById("log");
@@ -77,11 +93,11 @@ function buildCalls(){
   var calls=[];
   CAST.forEach(function(c,idx){
     var name=c[0],email=c[1].toLowerCase(),source=c[2],device=c[3],variant=c[4],p=PRODUCTS[c[5]],buys=c[6],abandon=c[7];
-    var day=13-idx, min=0;
+    var day=28-idx, min=0;
     var base={source:source,device_type:device,experiment_variant:variant};
     calls.push(["identify",{userId:email,traits:{email:email,name:name},timestamp:ts(day,min)}]); min+=1;
     calls.push(["track",{userId:email,event:"Product Viewed",properties:Object.assign({product_id:p.product_id,sku:p.sku,name:p.name,category:p.category,price:p.price,currency:"EUR",brand:"Brewfreund"},base),timestamp:ts(day,min)}]); min+=2;
-    calls.push(["track",{userId:email,event:"Experiment Viewed",properties:{experiment_id:"pdp_cta_test",experiment_name:"PDP CTA Subscription vs Cart",variant:variant},timestamp:ts(day,min)}]); min+=1;
+    calls.push(["track",{userId:email,event:"Experiment Viewed",properties:{experiment_id:"pdp_cta_ab",experiment_name:"PDP CTA Subscription vs Cart",variant:variant},timestamp:ts(day,min)}]); min+=1;
     if(buys||abandon){
       var cid=uuid();
       calls.push(["track",{userId:email,event:"Product Added",properties:{product_id:p.product_id,sku:p.sku,name:p.name,price:p.price,quantity:1,cart_id:cid,currency:"EUR"},timestamp:ts(day,min)}]); min+=2;
@@ -102,7 +118,7 @@ document.getElementById("go").addEventListener("click",async function(){
   var btn=this;btn.disabled=true;
   var st=document.getElementById("state");st.textContent="sending…";
   var calls=buildCalls();
-  log("Seeding "+CAST.length+" shoppers, "+calls.length+" calls…","hi");
+  log("Seeding "+CAST.length+" customers, "+calls.length+" calls…","hi");
   var bar=document.getElementById("pbar");
   var lastEmail="";
   for(var i=0;i<calls.length;i++){
@@ -110,10 +126,11 @@ document.getElementById("go").addEventListener("click",async function(){
     catch(e){ log("  ✗ "+e.message,"err"); st.textContent="failed"; btn.disabled=false; return; }
     var em=calls[i][1].userId; if(em!==lastEmail){log("  ✓ "+em,"ok");lastEmail=em;}
     bar.style.width=Math.round(100*(i+1)/calls.length)+"%";
-    await sleep(35);
+    await sleep(30);
   }
+  var igBuyers=CAST.filter(function(c){return c[6] && c[2]==="instagram";}).length;
   st.textContent="done";
-  log("\nDone. "+CAST.length+" profiles seeded. 6 are Instagram buyers (audience will show them).","hi");
+  log("\nDone. "+CAST.length+" customers seeded. "+igBuyers+" arrived from Instagram and bought.","hi");
   window.__seedDone=true;
 });
 </script>
