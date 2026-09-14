@@ -264,6 +264,11 @@ function bfRenderFooter() {
 
 function bfInitPage(options) {
   options = options || {};
+  // Capture & persist ?utm_source and ?device on EVERY page load (incl. the
+  // landing page), before the visitor clicks deeper — otherwise a channel like
+  // ?utm_source=instagram is lost the moment they navigate to a page without it.
+  bfSource();
+  bfDeviceType();
   bfRenderHeader(options.active);
   document.addEventListener("DOMContentLoaded", function () {});
   bfRenderFooter();
