@@ -6,13 +6,11 @@
 <title>ShopGuide Core — seed loader (EU)</title>
 <!--
   ShopGuide Core seed loader.
-  1) Open this page (hosted on GitHub Pages, or locally).
-  2) Paste the EU source WRITE KEY into the box.
-  3) Click "Seed ShopGuide Core".
-  Everything is sent to the EU endpoint (events.eu1.segmentapis.com) with a consent
-  object, UTM context, and experiment_variant on every event — the frozen ShopGuide Core shape.
-  NOTE: the live phone->laptop merge (Act 2) is meant to be performed LIVE on real devices in the
-  demo. The "Lena" block below is included so a recorded cut still has a clean merge + chat tie-in.
+  1) Open this page. 2) Paste the EU source WRITE KEY into the box. 3) Click "Seed ShopGuide Core".
+  Everything is sent to the EU endpoint (events.eu1.segmentapis.com) with a consent object, UTM
+  context, and experiment_variant on every event — the frozen ShopGuide Core shape.
+  If the chat tie-in doesn't appear on Lena after seeding (back-dated events don't backfill a
+  just-connected source), click "Live tie-in ping (Lena)" to fire it with a current timestamp.
 -->
 <style>
   body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f6f9;color:#141a22}
@@ -33,6 +31,7 @@
     <p>Seeds the supporting cast, a denied-consent journey, and the Lena merge + chat tie-in. Operator page.</p>
     <input id="key" type="text" placeholder="Paste EU source write key here" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #e5e9ef;border-radius:8px;font:13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:12px">
     <button id="go">Seed ShopGuide Core</button>
+    <button id="ping" style="background:#1f8a5b;margin-left:8px">Live tie-in ping (Lena)</button>
     <span id="state" style="color:#63707e;font-size:13px;margin-left:10px"></span>
     <div class="log" id="log">Paste the EU source WRITE KEY in the box, then click Seed.</div>
   </div>
@@ -162,6 +161,26 @@ document.getElementById("go").addEventListener("click",async function(){
   }
   document.getElementById("state").textContent="done";
   log("\nDone. Supporting cast + denied-consent journey + Lena merge & chat tie-in seeded.","hi");
+});
+
+// Fires CURRENT-TIME events so the chat tie-in lands on Lena immediately (back-dated events don't
+// backfill into a just-connected source). Click after the space is connected to ShopGuide Core.
+document.getElementById("ping").addEventListener("click",async function(){
+  KEY=(document.getElementById("key").value||"").trim();
+  if(!KEY){log("Paste the write key in the box first.","err");return;}
+  var USER="lena.mueller@gmail.com", NAME="Lena Müller";
+  var chat="sg_chat_"+uuid(); var now=new Date().toISOString(); var gc=ctx("instagram",true,true);
+  var live=[
+    ["identify",{userId:USER,traits:{email:USER,name:NAME,shopguide_chat_session_id:chat},context:gc,timestamp:now}],
+    ["track",{userId:USER,event:"Chat Session Started",properties:Object.assign({shopguide_chat_session_id:chat,stand_in:true,device_type:"mobile"},consentProps(true,true)),context:gc,timestamp:now}]
+  ];
+  log("Live tie-in ping (current time) for Lena…","hi");
+  for(var i=0;i<live.length;i++){
+    try{ await send(live[i][0],live[i][1]); log("  ✓ "+live[i][0]+"  "+(live[i][1].event||"identify"),"ok"); }
+    catch(e){ log("  ✗ "+e.message,"err"); return; }
+    await sleep(40);
+  }
+  log("Live ping sent. Check Lena's profile in ~1 min for the shopguide_chat_session_id trait.","hi");
 });
 </script>
 </body>
