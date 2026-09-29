@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brewfront — Store Analytics</title>
+<style>
+  :root{
+    --cream:#F5EEE3; --red:#E4002B; --charcoal:#1A1A1A; --grey:#9B9B9B; --white:#FFFFFF;
+    --line:#e7ddce;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--charcoal);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .top{background:var(--white);border-bottom:1px solid var(--line);padding:16px 28px;display:flex;align-items:center;gap:14px}
+  .dot{width:26px;height:26px;border-radius:7px;background:var(--red)}
+  .top h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.2px}
+  .top .sub{color:var(--grey);font-size:13px;margin-left:2px}
+  .eu{margin-left:auto;font-size:12px;font-weight:700;color:#1f8a5b;background:#e7f6ee;border:1px solid #bfe6d0;padding:6px 12px;border-radius:999px}
+  .tabs{display:flex;gap:6px;padding:16px 28px 0}
+  .tab{border:0;background:transparent;font:inherit;font-weight:800;color:var(--grey);padding:10px 18px;border-radius:10px 10px 0 0;cursor:pointer}
+  .tab.on{color:var(--charcoal);background:var(--white);border:1px solid var(--line);border-bottom-color:var(--white)}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 28px 60px}
+  .panel{display:none} .panel.on{display:block}
+  .row{display:flex;gap:20px;flex-wrap:wrap}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:22px;flex:1;min-width:300px}
+  .card h3{margin:0 0 4px;font-size:15px}
+  .muted{color:var(--grey);font-size:13px;margin:0 0 16px}
+  .big{font-size:40px;font-weight:800;line-height:1}
+  .red{color:var(--red)} .grey{color:var(--grey)}
+  .kpi{display:flex;gap:26px;flex-wrap:wrap;margin-top:6px}
+  .kpi div span{display:block}
+  .kpi .n{font-size:30px;font-weight:800}
+  .kpi .l{font-size:12px;color:var(--grey);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .person{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
+  .chip{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line);margin:3px 4px 0 0}
+  .chip.red{background:#fdeaee;border-color:#f6bcc8;color:var(--red)}
+  .chip.grey{background:#f2f2f2;border-color:#e2e2e2;color:var(--grey)}
+  .arrow{font-size:24px;color:var(--red);align-self:center;font-weight:800}
+  /* A/B bars */
+  .toggle{display:inline-flex;background:#efe7d8;border-radius:999px;padding:4px;margin:4px 0 22px}
+  .toggle button{border:0;background:transparent;font:inherit;font-weight:800;color:var(--grey);padding:8px 16px;border-radius:999px;cursor:pointer}
+  .toggle button.on{background:var(--red);color:#fff}
+  .bars{display:flex;align-items:flex-end;gap:60px;height:240px;padding:10px 20px;border-left:2px solid var(--line);border-bottom:2px solid var(--line);max-width:460px}
+  .bar{width:90px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .bar .col{width:100%;border-radius:10px 10px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1),background .3s}
+  .bar .val{font-weight:800;margin-bottom:6px}
+  .bar .lab{margin-top:10px;font-weight:800}
+  .crown{font-size:20px;height:22px}
+  .verdict{font-size:22px;font-weight:800;margin:20px 0 0}
+  .verdict.loser{color:var(--red)}
+  .foot{color:var(--grey);font-size:13px;margin-top:10px;max-width:520px}
+  .supp{opacity:.4;text-decoration:line-through}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="dot"></div>
+    <h1>Brewfront <span class="sub">Store Analytics</span></h1>
+    <div class="eu">EU-processed · GDPR</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-t="identity">Identity</button>
+    <button class="tab" data-t="attribution">Attribution</button>
+    <button class="tab" data-t="consent">Consent</button>
+  </div>
+
+  <div class="wrap">
+    <!-- IDENTITY -->
+    <div class="panel on" id="identity">
+      <div class="row">
+        <div class="card">
+          <h3>Before stitching</h3>
+          <p class="muted">What the store believed</p>
+          <div class="big grey">3</div>
+          <p class="muted">separate anonymous visitors</p>
+          <div class="person"><div class="av" style="background:#9B9B9B">?</div><div>Visitor · phone · Instagram</div></div>
+          <div class="person"><div class="av" style="background:#9B9B9B">?</div><div>Visitor · desktop · direct</div></div>
+          <div class="person"><div class="av" style="background:#9B9B9B">?</div><div>Visitor · mobile · email</div></div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="card" style="border-color:#f6bcc8">
+          <h3>After stitching</h3>
+          <p class="muted">One real customer</p>
+          <div class="person" style="border-top:0"><div class="av" style="background:#E4002B">LM</div>
+            <div><strong>Lena Müller</strong><br><span class="muted" style="margin:0">lena.mueller@gmail.com</span></div></div>
+          <div style="margin-top:8px">
+            <span class="chip red">📱 phone</span><span class="chip red">💻 laptop</span><span class="chip red">✉ email</span>
+          </div>
+          <div class="kpi" style="margin-top:18px">
+            <div><span class="n red">3→1</span><span class="l">devices merged</span></div>
+            <div><span class="n">100%</span><span class="l">deterministic</span></div>
+          </div>
+          <p class="foot">Merged only at a real identity moment (sign-in / newsletter / checkout). anonymousId → userId. Never guessed.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTRIBUTION / FLIP -->
+    <div class="panel" id="attribution">
+      <h3 style="margin:0 0 2px">A/B Test — PDP CTA (Variant A vs B)</h3>
+      <p class="muted">Same test. Two ways to score it.</p>
+      <div class="toggle">
+        <button id="mSession" class="on" onclick="setMode('session')">Per session</button>
+        <button id="mJourney" onclick="setMode('journey')">Per journey (first-touch)</button>
+      </div>
+      <div class="bars">
+        <div class="bar">
+          <span class="crown" id="crownA"></span>
+          <span class="val" id="valA">38%</span>
+          <div class="col" id="colA" style="height:120px;background:#9B9B9B"></div>
+          <span class="lab">Variant A</span>
+        </div>
+        <div class="bar">
+          <span class="crown" id="crownB">👑</span>
+          <span class="val" id="valB">62%</span>
+          <div class="col" id="colB" style="height:200px;background:#E4002B"></div>
+          <span class="lab">Variant B</span>
+        </div>
+      </div>
+      <p class="verdict" id="verdict">By sessions, Variant B wins.</p>
+      <p class="foot" id="flipfoot">Converting sessions skew to desktop &amp; direct — where B was shown. Switch to real journeys to see the truth.</p>
+    </div>
+
+    <!-- CONSENT -->
+    <div class="panel" id="consent">
+      <h3 style="margin:0 0 2px">Consent — live behavior, not a certificate</h3>
+      <p class="muted">Every event carries a consent state. Denied means denied.</p>
+      <div class="row">
+        <div class="card">
+          <h3>Consent granted</h3>
+          <p class="muted">Analytics ✓ · Marketing ✓</p>
+          <div class="person" style="border-top:0"><div class="av" style="background:#E4002B">LM</div><div>Lena Müller</div></div>
+          <div style="margin-top:10px">
+            <span class="chip red">Page Viewed</span><span class="chip red">Product Viewed</span>
+            <span class="chip red">Order Completed</span><span class="chip red">Chat session</span>
+          </div>
+          <p class="foot">All events flow. Full profile builds.</p>
+        </div>
+        <div class="card">
+          <h3>Consent denied</h3>
+          <p class="muted">Analytics ✗ · Marketing ✗</p>
+          <div class="person" style="border-top:0"><div class="av" style="background:#9B9B9B">DD</div><div>Denied visitor</div></div>
+          <div style="margin-top:10px">
+            <span class="chip grey supp">Page Viewed</span><span class="chip grey supp">Product Viewed</span>
+            <span class="chip grey supp">Order Completed</span>
+          </div>
+          <p class="foot">Events suppressed at collection. Nothing stored. Processed in the EU.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // tabs
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+      document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+      t.classList.add('on');
+      document.getElementById(t.dataset.t).classList.add('on');
+    });
+  });
+  // A/B flip
+  function setMode(m){
+    var colA=document.getElementById('colA'), colB=document.getElementById('colB');
+    var valA=document.getElementById('valA'), valB=document.getElementById('valB');
+    var crownA=document.getElementById('crownA'), crownB=document.getElementById('crownB');
+    var verdict=document.getElementById('verdict'), foot=document.getElementById('flipfoot');
+    var s=document.getElementById('mSession'), j=document.getElementById('mJourney');
+    if(m==='session'){
+      s.classList.add('on'); j.classList.remove('on');
+      colA.style.height='120px'; colA.style.background='#9B9B9B';
+      colB.style.height='200px'; colB.style.background='#E4002B';
+      valA.textContent='38%'; valB.textContent='62%';
+      crownA.textContent=''; crownB.textContent='👑';
+      verdict.textContent='By sessions, Variant B wins.'; verdict.classList.remove('loser');
+      foot.textContent='Converting sessions skew to desktop & direct — where B was shown. Switch to real journeys to see the truth.';
+    } else {
+      j.classList.add('on'); s.classList.remove('on');
+      colA.style.height='210px'; colA.style.background='#E4002B';
+      colB.style.height='110px'; colB.style.background='#9B9B9B';
+      valA.textContent='64%'; valB.textContent='36%';
+      crownA.textContent='👑'; crownB.textContent='';
+      verdict.textContent='By real journeys, Variant A wins. You shipped the loser.'; verdict.classList.add('loser');
+      foot.textContent='Scored on stitched, first-touch journeys — real people. Same events, opposite verdict.';
+    }
+  }
+</script>
+</body>
+</html>
