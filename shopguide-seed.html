@@ -9,8 +9,11 @@
   1) Open this page. 2) Paste the EU source WRITE KEY into the box. 3) Click "Seed ShopGuide Core".
   Everything is sent to the EU endpoint (events.eu1.segmentapis.com) with a consent object, UTM
   context, and experiment_variant on every event — the frozen ShopGuide Core shape.
-  If the chat tie-in doesn't appear on Lena after seeding (back-dated events don't backfill a
-  just-connected source), click "Live tie-in ping (Lena)" to fire it with a current timestamp.
+  Buttons:
+   - "Seed ShopGuide Core": full seed to the EU ShopGuide Core source (uses the key in the box).
+   - "Live tie-in ping (Lena)": current-time chat tie-in to the ShopGuide Core source (uses the box key).
+   - "Force tie-in via rig source (Lena)": sends the chat tie-in through the brewfreund-store rig source,
+      which is already connected to the Unify space — use this if ShopGuide Core isn't feeding the space yet.
 -->
 <style>
   body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f6f9;color:#141a22}
@@ -32,6 +35,7 @@
     <input id="key" type="text" placeholder="Paste EU source write key here" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #e5e9ef;border-radius:8px;font:13px ui-monospace,Menlo,Consolas,monospace;margin-bottom:12px">
     <button id="go">Seed ShopGuide Core</button>
     <button id="ping" style="background:#1f8a5b;margin-left:8px">Live tie-in ping (Lena)</button>
+    <button id="pingrig" style="background:#8a5a1f;margin-left:8px">Force tie-in via rig source (Lena)</button>
     <span id="state" style="color:#63707e;font-size:13px;margin-left:10px"></span>
     <div class="log" id="log">Paste the EU source WRITE KEY in the box, then click Seed.</div>
   </div>
@@ -164,7 +168,7 @@ document.getElementById("go").addEventListener("click",async function(){
 });
 
 // Fires CURRENT-TIME events so the chat tie-in lands on Lena immediately (back-dated events don't
-// backfill into a just-connected source). Click after the space is connected to ShopGuide Core.
+// backfill into a just-connected source). Uses the ShopGuide Core key in the box.
 document.getElementById("ping").addEventListener("click",async function(){
   KEY=(document.getElementById("key").value||"").trim();
   if(!KEY){log("Paste the write key in the box first.","err");return;}
@@ -181,6 +185,28 @@ document.getElementById("ping").addEventListener("click",async function(){
     await sleep(40);
   }
   log("Live ping sent. Check Lena's profile in ~1 min for the shopguide_chat_session_id trait.","hi");
+});
+
+// Fallback: send the tie-in through the brewfreund-store rig source, which is ALREADY connected to
+// the Unify space (it built Lena's 3-device merge). Use this if the ShopGuide Core source isn't
+// feeding the space yet. It lands on Lena's existing profile within ~1 min.
+document.getElementById("pingrig").addEventListener("click",async function(){
+  var RIGKEY="gktZ2jGZHKWXJNg2Xy49aB7YXHYzbvlI"; var RIGAPI="https://api.segment.io/v1";
+  var auth2="Basic "+btoa(RIGKEY+":");
+  var USER="lena.mueller@gmail.com", NAME="Lena Müller";
+  var chat="sg_chat_"+uuid(); var now=new Date().toISOString(); var gc=ctx("instagram",true,true);
+  var live=[
+    ["identify",{userId:USER,traits:{email:USER,name:NAME,shopguide_chat_session_id:chat},context:gc,timestamp:now}],
+    ["track",{userId:USER,event:"Chat Session Started",properties:Object.assign({shopguide_chat_session_id:chat,stand_in:true,device_type:"mobile"},consentProps(true,true)),context:gc,timestamp:now}]
+  ];
+  log("Tie-in via RIG source (brewfreund-store) for Lena…","hi");
+  for(var i=0;i<live.length;i++){
+    try{ var r=await fetch(RIGAPI+"/"+live[i][0],{method:"POST",headers:{"Content-Type":"application/json","Authorization":auth2},body:JSON.stringify(live[i][1])});
+      log((r.ok?"  ✓ ":"  ✗ ")+live[i][0]+"  "+(live[i][1].event||"identify")+"  "+r.status, r.ok?"ok":"err"); }
+    catch(e){ log("  ✗ "+e.message,"err"); return; }
+    await sleep(40);
+  }
+  log("Sent via rig source (the one that already feeds the space). Lena should show shopguide_chat_session_id in ~1 min.","hi");
 });
 </script>
 </body>
